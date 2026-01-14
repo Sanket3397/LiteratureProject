@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Adaptive Financial Literacy Quiz</title>
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f8;
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+}
+.quiz-box {
+    background: white;
+    width: 700px;
+    padding: 20px;
+    border-radius: 8px;
+}
+.timer {
+    text-align: right;
+    color: red;
+    font-weight: bold;
+}
+.option { margin: 8px 0; }
+button { margin-top: 15px; padding: 8px 14px; }
+</style>
+</head>
+
+<body>
+
+<div class="quiz-box">
+    <h2 id="heading"></h2>
+    <div class="timer">Time Left: <span id="time"></span>s</div>
+    <p id="question"></p>
+    <div id="options"></div>
+    <button onclick="nextQuestion()">Next</button>
+</div>
+
+<script>
+// ======================= QUESTION DATA =======================
+const quiz = {
+    Budgeting: {
+        easy: [
+            {q:"What is budgeting?", o:["Spending","Planning expenses","Borrowing"], a:1},
+            {q:"Emergency fund is for?", o:["Shopping","Unexpected expenses","Travel"], a:1},
+            {q:"Needs example?", o:["Food","Gaming","Luxury"], a:0}
+        ],
+        medium: [
+            {q:"50/30/20 rule refers to?", o:["Income split","Tax","Loan"], a:0},
+            {q:"Fixed expense?", o:["Rent","Food","Shopping"], a:0},
+            {q:"Best expense tracking?", o:["Guess","App","Memory"], a:1}
+        ],
+        hard: [
+            {q:"Zero-based budget means?", o:["No savings","Income-expense=0","No income"], a:1},
+            {q:"Sinking fund used for?", o:["Future expenses","Daily","Loan"], a:0},
+            {q:"Savings health metric?", o:["Savings rate","Income","Debt"], a:0}
+        ]
+    },
+    Banking: {
+        easy: [
+            {q:"Savings account purpose?", o:["Loan","Save money","Invest"], a:1},
+            {q:"ATM full form?", o:["Auto Teller","Automated Teller Machine","Any Time Money"], a:1},
+            {q:"Banks keep money safe?", o:["Yes","No","Sometimes"], a:0}
+        ],
+        medium: [
+            {q:"Compound interest?", o:["Principal only","Interest on interest","Tax"], a:1},
+            {q:"FD gives?", o:["High risk","Fixed return","Loss"], a:1},
+            {q:"Credit card uses?", o:["Own money","Borrowed money","Free money"], a:1}
+        ],
+        hard: [
+            {q:"Repo rate affects?", o:["Loans","Crypto","Gold"], a:0},
+            {q:"Higher interest means?", o:["Cheap loans","Expensive loans","No effect"], a:1},
+            {q:"CRR kept with?", o:["RBI","Banks","Public"], a:0}
+        ]
+    },
+    Investments: {
+        easy: [
+            {q:"Investment goal?", o:["Lose","Grow money","Spend"], a:1},
+            {q:"Which is investment?", o:["FD","Rent","Shopping"], a:0},
+            {q:"Risk means?", o:["Guarantee","Uncertainty","Profit"], a:1}
+        ],
+        medium: [
+            {q:"Diversification helps?", o:["Increase risk","Reduce risk","No effect"], a:1},
+            {q:"Mutual fund invests in?", o:["Only stocks","Only gold","Multiple assets"], a:2},
+            {q:"SIP means?", o:["Loan","Regular investing","Tax"], a:1}
+        ],
+        hard: [
+            {q:"Higher risk gives?", o:["Lower return","Higher return","No return"], a:1},
+            {q:"Real return adjusts for?", o:["Inflation","Tax","Brokerage"], a:0},
+            {q:"Beta measures?", o:["Profit","Volatility","Tax"], a:1}
+        ]
+    }
+};
+
+const levels = ["easy","medium","hard"];
+const categories = Object.keys(quiz);
+
+// ======================= STATE =======================
+let state = JSON.parse(localStorage.getItem("quizState")) || {
+    levelIndex: 0,
+    activeCategories: [...categories],
+    pool: [],
+    qIndex: 0,
+    score: Object.fromEntries(categories.map(c => [c,{easy:0,medium:0,hard:0}])),
+    questionStartTime: Date.now()
+};
+
+// ======================= UTILS =======================
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        let j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+}
+
+// ======================= BUILD POOL =======================
+function buildPool(){
+    let lvl = levels[state.levelIndex];
+    let pool=[];
+    state.activeCategories.forEach(cat=>{
+        quiz[cat][lvl].forEach(q=>{
+            pool.push({cat, lvl, q});
+        });
+    });
+    shuffle(pool);
+    state.pool = pool;
+    state.qIndex = 0;
+}
+
+// ======================= LOAD QUESTION =======================
+function loadQuestion(){
+    if(state.qIndex >= state.pool.length){
+        evaluateLevel();
+        return;
+    }
+
+    let obj = state.pool[state.qIndex];
+    document.getElementById("heading").innerText =
+        `${obj.cat} - ${obj.lvl.toUpperCase()} Level`;
+
+    document.getElementById("question").innerText = obj.q.q;
+    document.getElementById("options").innerHTML =
+        obj.q.o.map((o,i)=>`
+        <div class="option">
+            <input type="radio" name="opt" value="${i}"> ${o}
+        </div>`).join("");
+
+    state.questionStartTime = Date.now();
+    saveState();
+}
+
+// ======================= TIMER (REFRESH SAFE) =======================
+function startTimer(){
+    setInterval(()=>{
+        let elapsed = Math.floor((Date.now()-state.questionStartTime)/1000);
+        let left = Math.max(30-elapsed,0);
+        document.getElementById("time").innerText = left;
+        if(left===0) nextQuestion();
+    },1000);
+}
+
+// ======================= NEXT QUESTION =======================
+function nextQuestion(){
+    let selected=document.querySelector('input[name="opt"]:checked');
+    let obj=state.pool[state.qIndex];
+
+    if(selected && parseInt(selected.value)===obj.q.a){
+        state.score[obj.cat][obj.lvl]++;
+    }
+
+    state.qIndex++;
+    saveState();
+    loadQuestion();
+}
+
+// ======================= LEVEL EVALUATION =======================
+function evaluateLevel(){
+    let lvl=levels[state.levelIndex];
+    state.activeCategories = state.activeCategories.filter(cat=>{
+        let percent=(state.score[cat][lvl]/3)*100;
+        return percent>=60;
+    });
+
+    state.levelIndex++;
+
+    if(state.levelIndex>=levels.length || state.activeCategories.length===0){
+        showResult();
+        return;
+    }
+
+    buildPool();
+    saveState();
+    loadQuestion();
+}
+
+// ======================= RESULT =======================
+function showResult(){
+    localStorage.removeItem("quizState");
+    let best="",max=0;
+
+    categories.forEach(c=>{
+        let total=state.score[c].easy+state.score[c].medium+state.score[c].hard;
+        if(total>max){max=total;best=c;}
+    });
+
+    document.querySelector(".quiz-box").innerHTML=`
+        <h2>Result</h2>
+        ${categories.map(c=>`
+        <p><b>${c}</b> → Easy:${state.score[c].easy},
+        Medium:${state.score[c].medium},
+        Hard:${state.score[c].hard}</p>`).join("")}
+        <h3>Strongest Category: ${best}</h3>
+    `;
+}
+
+// ======================= STORAGE =======================
+function saveState(){
+    localStorage.setItem("quizState",JSON.stringify(state));
+}
+
+// ======================= ANTI-INSPECT PROTECTION =======================
+
+// Disable right click
+document.addEventListener("contextmenu", e => e.preventDefault());
+
+// Disable key shortcuts
+document.addEventListener("keydown", function(e) {
+
+    // F12
+    if (e.key === "F12") {
+        e.preventDefault();
+    }
+
+    // Ctrl + Shift + I / J / C
+    if (e.ctrlKey && e.shiftKey && ["I","J","C"].includes(e.key.toUpperCase())) {
+        e.preventDefault();
+    }
+
+    // Ctrl + U
+    if (e.ctrlKey && e.key.toUpperCase() === "U") {
+        e.preventDefault();
+    }
+});
+
+// Basic DevTools detection
+setInterval(function() {
+    const widthDiff = window.outerWidth - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+
+    if (widthDiff > 160 || heightDiff > 160) {
+        document.body.innerHTML = `
+            <h2 style="text-align:center;margin-top:50px;color:red;">
+            Developer tools detected. Quiz terminated.
+            </h2>`;
+        localStorage.removeItem("quizState");
+    }
+}, 1000);
+
+
+
+// ======================= INIT =======================
+if(state.pool.length===0) buildPool();
+loadQuestion();
+startTimer();
+</script>
+
+</body>
+</html>
