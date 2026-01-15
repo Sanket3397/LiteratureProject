@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration Form</title>
+    <link rel="stylesheet" href="registration.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Registration Form</h2>
+
+    <form id="regForm">
+        <label>
+            Name (नाव)
+        </label>
+        <input type="text" id="name" required>
+
+        <label>
+            State (राज्य)
+        </label>
+        <input type="text" id="state" required>
+
+        <label>
+            District (जिल्हा)
+        </label>
+        <input type="text" id="district" required>
+
+        <label>
+            Taluka (तालुका)
+        </label>
+        <input type="text" id="tal" required>
+
+        <label>
+            City / Village (शहर / गाव)
+        </label>
+        <input type="text" id="city" required>
+
+        <label>
+            Phone No (मोबाईल क्रमांक)
+        </label>
+        <input type="tel" id="phone" pattern="[0-9]{10}" required>
+
+        <label>
+            Date of Birth (जन्मतारीख)
+        </label>
+        <input type="date" id="dob" required>
+
+        <label>
+            Password (पासवर्ड)
+        </label>
+        <input type="password" id="password" required>
+
+        <label>
+            Confirm Password (पासवर्डची खात्री)
+        </label>
+        <input type="password" id="confirmPassword" required>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <p id="message"></p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

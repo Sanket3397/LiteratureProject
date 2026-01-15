@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>User Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+        .profile { background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+        .quiz { background: #e0f7fa; padding: 15px; border-radius: 8px; }
+        h2 { margin-bottom: 10px; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<h1>Welcome to User Panel</h1>
+
+<div class="profile">
+    <h2>Your Profile</h2>
+    <p><strong>Name:</strong> <span id="userName"></span></p>
+    <p><strong>Phone:</strong> <span id="userPhone"></span></p>
+    <button id="logoutBtn">Logout</button>
+</div>
+
+<div class="quiz">
+    <h2>Attempt Quiz / Test</h2>
+    <p>Click below to start your quiz.</p>
+    <button id="startQuizBtn">Start Quiz</button>
+</div>
+
+<script>
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!token || !user) {
+        alert("You must be logged in to access this page.");
+        window.location.href = "login.html";
+    }
+
+    // Display user info
+    document.getElementById("userName").textContent = user.name;
+    document.getElementById("userPhone").textContent = user.phone;
+
+    // Logout handler
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "login.html";
+    });
+
+    // Quiz button handler (just alert for now)
+    document.getElementById("startQuizBtn").addEventListener("click", () => {
+        alert("Quiz functionality coming soon!");
+        // Here you can implement quiz loading logic
+    });
+</script>
+
+</body>
+</html>
